@@ -120,11 +120,6 @@ function drawSegment(root, i, j){
     ctx.fillStyle = colors[i];
     ctx.fill();
     ctx.stroke();
-    root['start_angle'] = start_angle;
-    root['i'] = i;
-    root['j'] = j;
-    //ctx.font = "20px Arial";
-    //ctx.fillText(root['name'], w/2, h/2);
     if ('father' in root){
         drawSegment(root['father'], i+1, j*2);
     }
@@ -132,6 +127,48 @@ function drawSegment(root, i, j){
         drawSegment(root['mother'], i+1, j*2+1);
     }
 }
+
+function printNames(root, i, j){
+    if (i == 0){ // root
+        ctx.textBaseline = "middle";        
+        ctx.textAlign = "center";
+        ctx.font = "12px Arial";
+        ctx.fillText(root['name'],w/2,h/2);    
+    }else if (i < 2){ // parents
+        let x = (-1)**(j+1) * radius/n_generations*i*1.25;
+        let start_angle = j/(2**i)*2+0.5;
+        let end_angle = (j+1)/(2**i)*2+0.5;
+
+        ctx.translate(w/2+x,h/2);
+        ctx.rotate(Math.PI*(start_angle+end_angle)/2);
+        ctx.rotate(Math.PI*0.5); 
+        
+        ctx.textAlign = "center";
+        ctx.font = "10px Arial";
+        ctx.fillText(root['name'],0,0);
+    }else{
+        let x = radius/n_generations*i;
+        let start_angle = j/(2**i)*2+0.5;
+        let end_angle = (j+1)/(2**i)*2+0.5;
+
+        ctx.translate(w/2,h/2);
+        ctx.rotate(Math.PI*(start_angle+end_angle)/2);
+        ctx.font = "8px Arial";
+        ctx.textBaseline = "middle";
+        ctx.fillText(root['name'],x,0);
+    }
+    // reset the transformation matrix
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.textAlign = "start";
+
+    if ('father' in root){
+        printNames(root['father'], i+1, j*2);
+    }
+    if ('mother' in root){
+        printNames(root['mother'], i+1, j*2+1);
+    }
+}
+
 function main(data){
     // reset the canvas and the dropdown menu
     ctx.clearRect(0, 0, w, h);
@@ -158,6 +195,10 @@ function main(data){
     if ('mother' in tree){
         drawSegment(tree['mother'], 1, 1);
     }
+    // print the names
+    ctx.fillStyle = "black";
+    printNames(tree, 0, 0);
+    console.log(indis);
     console.log(tree);
     
     let indiList = [];    
