@@ -48,7 +48,6 @@ function parseGEDCOM(input) {
     if (currentIndividual) {
         individuals[currentIndividual.id] = currentIndividual;
     }
-
     return [individuals, root];
 }
 
@@ -86,6 +85,7 @@ function buildTree(root, individuals, n_generations){
 // Get the canvas element from the DOM
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
+var select = document.getElementById("selectRoot");
 
 // Set the canvas dimensions
 let w = 810;
@@ -132,12 +132,16 @@ function drawSegment(root, i, j){
         drawSegment(root['mother'], i+1, j*2+1);
     }
 }
-
 function main(data){
+    // reset the canvas and the dropdown menu
     ctx.clearRect(0, 0, w, h);
     drawGrid();
+    select.length = 0;
     // parse the .ged file
-    let [indis, root] = parseGEDCOM(data); 
+    let [indis_, root] = parseGEDCOM(data); 
+    indis = indis_;
+    console.log(root);
+    
     // TO-DO: select the root of the tree, currently first individual in ged file
     // build the tree (a dictionary) from the root
     let tree = buildTree(root, indis, n_generations); 
@@ -154,8 +158,69 @@ function main(data){
     if ('mother' in tree){
         drawSegment(tree['mother'], 1, 1);
     }
-    console.log(indis);
     console.log(tree);
+    
+    let indiList = [];    
+    for (const [key, value] of Object.entries(indis)) {
+        let user = {};
+        user.id = key;
+        let name = '';
+        let surname = '';
+        if ('GIVN' in indis[key]){
+            name = indis[key]['GIVN'];
+        }
+        user.name = name;
+        if ('SURN' in indis[key]){
+            surname = indis[key]['SURN']; 
+        }
+        user.surname = surname;
+        indiList.push(user);
+        fullName = [name,surname].filter(Boolean).join(' ');
+        user.fullName = fullName;
+    }
+    indiList.sort((a, b) => {
+        if (a.surname < b.surname) return -1;
+        if (a.surname > b.surname) return 1;
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
+        return 0;
+    });
+    console.log(indiList);
+    for (let i = 0; i < indiList.length; i++){
+        var el = document.createElement("option");
+        el.textContent = indiList[i].fullName;
+        el.value = indiList[i].id;
+        select.appendChild(el);
+    }
+    
+    select.value = root;
+}
+var indis;
+function rootChange(){ 
+    
+    // reset the canvas and the dropdown menu
+    ctx.clearRect(0, 0, w, h);
+    drawGrid();
+    
+    var root = select.value;
+    let tree = buildTree(root, indis, n_generations); 
+    console.log(tree);
+    
+    // draw and fill the root circle
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, radius/n_generations, 0, Math.PI*2);
+    ctx.fillStyle = "red";
+    ctx.fill();
+    ctx.stroke();
+    // fill in the segments
+    if ('father' in tree){
+        drawSegment(tree['father'], 1, 0);
+    }
+    if ('mother' in tree){
+        drawSegment(tree['mother'], 1, 1);
+    }
+    console.log(tree);
+    
 }
 
 const fileSelector = document.getElementById('file-selector');
