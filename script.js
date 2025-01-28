@@ -60,9 +60,11 @@ function buildTree(root, individuals, n_generations){
         let surname = '';
         if ('GIVN' in individuals[root]){
             name = individuals[root]['GIVN'];
+            tree['GIVN'] = name;
         }
         if ('SURN' in individuals[root]){
             surname = individuals[root]['SURN']; 
+            tree['SURN'] = surname;
         }
         
         tree['name'] = [name,surname].filter(Boolean).join(' ');
@@ -92,8 +94,19 @@ let w = 810;
 let h = 810;
 canvas.width = w;
 canvas.height = h;
-let colors = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "brown", "violet", "cyan"];
-
+//let colors = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "brown", "violet", "cyan"];
+let colors = [
+    "#66ff66", // Medium light green
+    "#80ff80",
+    "#99ff99",
+    "#b3ffb3",
+    "#ccffcc",
+    "#e6ffe6",
+    "#f2fff2",
+    "#f5fff5",
+    "#f9fff9",
+    "#fcfffc", // Very light green
+];
 let n_generations = 8; // TO-DO: get the number of generations from the user
 n_generations = n_generations+1;
 let radius = (h-10)/2; // 800/2 = 400
@@ -129,37 +142,69 @@ function drawSegment(root, i, j){
 }
 
 function printNames(root, i, j){
-    if (i == 0){ // root
-        ctx.textBaseline = "middle";        
-        ctx.textAlign = "center";
-        ctx.font = "12px Arial";
-        ctx.fillText(root['name'],w/2,h/2);    
-    }else if (i < 2){ // parents
-        let x = (-1)**(j+1) * radius/n_generations*i*1.25;
-        let start_angle = j/(2**i)*2+0.5;
-        let end_angle = (j+1)/(2**i)*2+0.5;
-
-        ctx.translate(w/2+x,h/2);
-        ctx.rotate(Math.PI*(start_angle+end_angle)/2);
-        ctx.rotate(Math.PI*0.5); 
-        
-        ctx.textAlign = "center";
-        ctx.font = "10px Arial";
-        ctx.fillText(root['name'],0,0);
+    var fontSize = 15;
+    var font = "Arial";
+    ctx.textBaseline = "middle";  
+    ctx.textAlign = "center";
+    let x = radius/n_generations * (i+0.25);
+    let start_angle = j/(2**i)*2+0.5;
+    let end_angle = (j+1)/(2**i)*2+0.5;
+    ctx.font = (fontSize-i) + "px " + font;
+    if (i == 0){ // root      
+        ctx.fillText(root['GIVN'],w/2,h/2-10);   
+        ctx.fillText(root['SURN'],w/2,h/2+10);    
     }else{
-        let x = radius/n_generations*i;
-        let start_angle = j/(2**i)*2+0.5;
-        let end_angle = (j+1)/(2**i)*2+0.5;
-
         ctx.translate(w/2,h/2);
         ctx.rotate(Math.PI*(start_angle+end_angle)/2);
-        ctx.font = "8px Arial";
-        ctx.textBaseline = "middle";
-        ctx.fillText(root['name'],x,0);
+        ctx.translate(x,0);
+        if (i < 6){ // for the first 6 generations, rotate the text
+            ctx.rotate(Math.PI*0.5);
+            if (i <2){
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                seg_circ = 2 * Math.PI * (radius/n_generations*(i+0.5));
+                seg_width = seg_circ/(2**i);
+                var name = root['name'];
+                text_w = ctx.measureText(name).width;
+
+                // izračunat, kje se začne ime (koliko je praznega prostora)
+                // izračunat, kolikšen delež kroga zavzame posamezen znak
+
+                ctx.translate(w/2,h/2);
+                var a = (1-text_w/seg_width)
+                var pos = start_angle+a/2;
+                for (var k = 0; k < name.length; k++) {
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.translate(w/2,h/2);
+                    var charWid = ctx.measureText(name[k]).width; 
+                    console.log(charWid);
+                    ctx.rotate(Math.PI*pos);
+                    ctx.translate(x,0); 
+                    ctx.rotate(Math.PI*0.5);
+                    console.log(name[k]);
+                    ctx.fillText(name[k],0,0); 
+                    pos = pos + 0.05;
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                }
+
+            }
+            if (i < 4){
+                ctx.fillText(root['name'],0,0);
+            }else{
+                ctx.fillText(root['GIVN'],0,-20);
+                ctx.fillText(root['SURN'],0,-10);
+            }            
+        }else{
+            ctx.textAlign = "start";
+            if (i == 6){
+                ctx.fillText(root['GIVN'],0,-5);
+                ctx.fillText(root['SURN'],0,5);
+            }else{
+                ctx.fillText(root['name'],0,0);
+            }
+        }
     }
     // reset the transformation matrix
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.textAlign = "start";
 
     if ('father' in root){
         printNames(root['father'], i+1, j*2);
@@ -171,7 +216,8 @@ function printNames(root, i, j){
 
 function main(data){
     // reset the canvas and the dropdown menu
-    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, w, h);
     drawGrid();
     select.length = 0;
     // parse the .ged file
@@ -185,7 +231,7 @@ function main(data){
     // draw and fill the root circle
     ctx.beginPath();
     ctx.arc(w/2, h/2, radius/n_generations, 0, Math.PI*2);
-    ctx.fillStyle = "red";
+    ctx.fillStyle = colors[0];
     ctx.fill();
     ctx.stroke();
     // fill in the segments
@@ -240,7 +286,8 @@ var indis;
 function rootChange(){ 
     
     // reset the canvas and the dropdown menu
-    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, w, h);
     drawGrid();
     
     var root = select.value;
@@ -250,7 +297,7 @@ function rootChange(){
     // draw and fill the root circle
     ctx.beginPath();
     ctx.arc(w/2, h/2, radius/n_generations, 0, Math.PI*2);
-    ctx.fillStyle = "red";
+    ctx.fillStyle = colors[0];
     ctx.fill();
     ctx.stroke();
     // fill in the segments
@@ -260,6 +307,8 @@ function rootChange(){
     if ('mother' in tree){
         drawSegment(tree['mother'], 1, 1);
     }
+    ctx.fillStyle = "black";
+    printNames(tree, 0, 0);
     console.log(tree);
     
 }
@@ -269,6 +318,7 @@ fileSelector.addEventListener('change', (event) => {
   const fileList = event.target.files;
   fileList[0].text().then(data => {
     main(data);
+    fileSelector.reset();
     });
 });
 
