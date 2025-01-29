@@ -146,63 +146,57 @@ function printNames(root, i, j){
     var font = "Arial";
     ctx.textBaseline = "middle";  
     ctx.textAlign = "center";
-    let x = radius/n_generations * (i+0.25);
+    let x = radius/n_generations * (i+0.5);
     let start_angle = j/(2**i)*2+0.5;
     let end_angle = (j+1)/(2**i)*2+0.5;
     ctx.font = (fontSize-i) + "px " + font;
-    if (i == 0){ // root      
-        ctx.fillText(root['GIVN'],w/2,h/2-10);   
-        ctx.fillText(root['SURN'],w/2,h/2+10);    
-    }else{
-        ctx.translate(w/2,h/2);
+    ctx.translate(w/2,h/2);
+    if (i == 0){ // 0: root      
+        ctx.fillText(root['GIVN'],0,0-10);   
+        ctx.fillText(root['SURN'],0,0+10);    
+    }else if (i < 4){ // 1, 2, 3: curved text
+        seg_circ = 2 * Math.PI * (radius/n_generations*(i+0.5));
+        seg_width = seg_circ/(2**i);
+        var name = root['name'];
+        text_w = ctx.measureText(name).width;
+        console.log(name, text_w, seg_width);
+        console.log(start_angle);
+        var a = (1-text_w/seg_width)/(2**i);
+        var pos = start_angle+a;
+        for (var k = 0; k < name.length; k++) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.textAlign = "left";
+            ctx.translate(w/2,h/2);
+            var charWid = ctx.measureText(name[k]).width; 
+            ctx.rotate(Math.PI*pos);
+            ctx.translate(x,0); 
+            ctx.rotate(Math.PI*0.5);
+            ctx.fillText(name[k],0,0); 
+            pos = pos + 2*(charWid/seg_circ);
+        }
+    }else if (i < 6){ // 4, 5: two lines
+        x = radius/n_generations * (i+0.1);
         ctx.rotate(Math.PI*(start_angle+end_angle)/2);
         ctx.translate(x,0);
-        if (i < 6){ // for the first 6 generations, rotate the text
-            ctx.rotate(Math.PI*0.5);
-            if (i <2){
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                seg_circ = 2 * Math.PI * (radius/n_generations*(i+0.5));
-                seg_width = seg_circ/(2**i);
-                var name = root['name'];
-                text_w = ctx.measureText(name).width;
-
-                // izračunat, kje se začne ime (koliko je praznega prostora)
-                // izračunat, kolikšen delež kroga zavzame posamezen znak
-
-                ctx.translate(w/2,h/2);
-                var a = (1-text_w/seg_width)
-                var pos = start_angle+a/2;
-                for (var k = 0; k < name.length; k++) {
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                    ctx.translate(w/2,h/2);
-                    var charWid = ctx.measureText(name[k]).width; 
-                    console.log(charWid);
-                    ctx.rotate(Math.PI*pos);
-                    ctx.translate(x,0); 
-                    ctx.rotate(Math.PI*0.5);
-                    console.log(name[k]);
-                    ctx.fillText(name[k],0,0); 
-                    pos = pos + 0.05;
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                }
-
-            }
-            if (i < 4){
-                ctx.fillText(root['name'],0,0);
-            }else{
-                ctx.fillText(root['GIVN'],0,-20);
-                ctx.fillText(root['SURN'],0,-10);
-            }            
-        }else{
-            ctx.textAlign = "start";
-            if (i == 6){
-                ctx.fillText(root['GIVN'],0,-5);
-                ctx.fillText(root['SURN'],0,5);
-            }else{
-                ctx.fillText(root['name'],0,0);
-            }
-        }
+        ctx.rotate(Math.PI*0.5);
+        ctx.fillText(root['GIVN'],0,-20);
+        ctx.fillText(root['SURN'],0,-10);
+    } else if (i < 7){ // 6: on ray, two lines
+        ctx.rotate(Math.PI*(start_angle+end_angle)/2);
+        x = radius/n_generations * (i+0.1);
+        ctx.translate(x,0);
+        ctx.textAlign = "start";
+        ctx.fillText(root['GIVN'],0,-5);
+        ctx.fillText(root['SURN'],0,5);
+    }else{ // 7+: on ray, one line
+        ctx.rotate(Math.PI*(start_angle+end_angle)/2);
+        x = radius/n_generations * (i+0.1);
+        ctx.translate(x,0);
+        ctx.textAlign = "start";
+        ctx.fillText(root['name'],0,0);
     }
+
+    
     // reset the transformation matrix
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
